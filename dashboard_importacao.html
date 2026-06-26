@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard de Importações — Acompanhamento por BL</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+:root{
+  --text-primary:#1a1a18;--text-secondary:#5f5e5a;--text-muted:#888780;
+  --surface-0:#f1efe8;--surface-1:#e8e6de;--surface-2:#ffffff;
+  --border:rgba(0,0,0,0.10);--border-strong:rgba(0,0,0,0.18);
+  --bg-accent:#e6f1fb;--text-accent:#185fa5;--border-accent:#85b7eb;
+  --fill-accent:#378add;
+  --radius:8px;--font-sans:system-ui,-apple-system,sans-serif;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --text-primary:#e8e6de;--text-secondary:#b4b2a9;--text-muted:#888780;
+    --surface-0:#1a1a18;--surface-1:#2c2c2a;--surface-2:#3a3a38;
+    --border:rgba(255,255,255,0.10);--border-strong:rgba(255,255,255,0.18);
+    --bg-accent:#042c53;--text-accent:#85b7eb;--border-accent:#185fa5;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);background:var(--surface-0);color:var(--text-primary);min-height:100vh;padding:1.5rem}
+.wrap{max-width:1200px;margin:0 auto}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px}
+.tit{font-size:18px;font-weight:500;color:var(--text-primary)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filters select,.filters input{font-size:13px;padding:6px 10px;border-radius:var(--radius);border:0.5px solid var(--border-strong);background:var(--surface-2);color:var(--text-primary)}
+.btn{font-size:13px;padding:6px 12px;border-radius:var(--radius);border:0.5px solid var(--border-strong);background:var(--surface-2);color:var(--text-primary);cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.btn:hover{background:var(--surface-1)}
+.btn-acc{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}
+.btn-warn{background:#FAEEDA;color:#633806;border-color:#EF9F27}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:1.25rem}
+.metric{background:var(--surface-2);border-radius:var(--radius);padding:10px 14px;border:0.5px solid var(--border)}
+.metric-label{font-size:11px;color:var(--text-secondary);margin-bottom:3px}
+.metric-value{font-size:22px;font-weight:500;color:var(--text-primary)}
+.metric-sub{font-size:11px;color:var(--text-muted)}
+.tw{border:0.5px solid var(--border);border-radius:12px;overflow:auto;margin-bottom:1rem;background:var(--surface-2)}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;min-width:700px}
+colgroup col:nth-child(1){width:130px}colgroup col:nth-child(2){width:110px}
+colgroup col:nth-child(3){width:130px}colgroup col:nth-child(4){width:80px}
+colgroup col:nth-child(5){width:85px}colgroup col:nth-child(6){width:100px}
+colgroup col:nth-child(7){width:160px}colgroup col:nth-child(8){width:95px}
+colgroup col:nth-child(9){width:55px}
+thead tr{background:var(--surface-1)}
+th{padding:9px 10px;text-align:left;font-weight:500;font-size:11px;color:var(--text-secondary);border-bottom:0.5px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+td{padding:8px 10px;border-bottom:0.5px solid var(--border);color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface-1);cursor:pointer}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.etapa-bar{display:flex;gap:2px;align-items:center}
+.edot{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:500;flex-shrink:0}
+.dd{background:#1D9E75;color:#fff}.da{background:#378ADD;color:#fff}
+.dp{background:var(--surface-1);border:0.5px solid var(--border-strong);color:var(--text-muted)}
+.dalert{background:#E24B4A;color:#fff}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:flex-start;justify-content:center;padding-top:40px;overflow-y:auto}
+.overlay.open{display:flex}
+.modal{background:var(--surface-2);border-radius:12px;border:0.5px solid var(--border);padding:1.5rem;width:min(660px,96%);margin:auto;max-height:90vh;overflow-y:auto}
+.mhead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem}
+.mtit{font-size:16px;font-weight:500;color:var(--text-primary)}
+.mclose{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-secondary);line-height:1}
+.tab-bar{display:flex;gap:2px;margin-bottom:1rem;border-bottom:0.5px solid var(--border);flex-wrap:wrap}
+.tab{padding:6px 14px;font-size:13px;border:none;background:none;cursor:pointer;color:var(--text-secondary);border-bottom:2px solid transparent;margin-bottom:-0.5px}
+.tab.active{color:var(--text-accent);border-bottom-color:var(--fill-accent);font-weight:500}
+.campo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:1rem}
+.campo{background:var(--surface-1);border-radius:var(--radius);padding:8px 12px}
+.campo-label{font-size:11px;color:var(--text-muted);margin-bottom:2px}
+.campo-val{font-size:13px;font-weight:500;color:var(--text-primary)}
+.alerta-box{background:#FCEBEB;border:0.5px solid #F7C1C1;border-radius:var(--radius);padding:10px 14px;margin-bottom:1rem;font-size:13px;color:#791F1F;display:flex;gap:8px;align-items:flex-start}
+.demurrage-box{border:0.5px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem;background:var(--surface-1)}
+.dmrow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px}
+.dmrow:last-child{border-bottom:none;font-weight:500}
+.tl-item{display:flex;gap:12px}
+.tl-left{display:flex;flex-direction:column;align-items:center;width:30px;flex-shrink:0}
+.tl-circle{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.tl-line{width:2px;flex:1;min-height:18px;background:var(--border)}
+.tl-content{padding-bottom:18px;flex:1}
+.tl-label{font-size:13px;font-weight:500;margin-bottom:1px}
+.tl-date{font-size:11px;color:var(--text-muted)}
+.tl-obs{font-size:12px;color:var(--text-secondary);margin-top:4px;background:var(--surface-1);padding:6px 10px;border-radius:var(--radius)}
+.form-group{margin-bottom:10px}
+.form-label{font-size:12px;color:var(--text-secondary);margin-bottom:3px;display:block}
+.form-group input,.form-group select,.form-group textarea{width:100%;font-size:13px;padding:7px 10px;border-radius:var(--radius);border:0.5px solid var(--border-strong);background:var(--surface-2);color:var(--text-primary)}
+.form-group textarea{min-height:55px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.config-section{border:0.5px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem}
+.config-title{font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:10px}
+.pag{display:flex;align-items:center;gap:8px;justify-content:flex-end;font-size:13px;color:var(--text-secondary);margin-bottom:1rem}
+.email-preview{background:var(--surface-1);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px;font-size:12px;color:var(--text-secondary);white-space:pre-wrap;margin-top:8px;max-height:180px;overflow-y:auto}
+@media(max-width:600px){.row2,.row3{grid-template-columns:1fr}.filters{flex-direction:column;width:100%}.filters input,.filters select{width:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="top-bar">
+  <div class="tit"><i class="ti ti-ship" style="font-size:17px;vertical-align:-2px;margin-right:6px"></i>Importações — acompanhamento por BL</div>
+  <div class="filters">
+    <input type="text" id="busca" placeholder="Buscar BL, ref, fornecedor..." style="width:200px" oninput="filtrar()">
+    <select id="filtroEtapa" onchange="filtrar()">
+      <option value="">Todas as etapas</option>
+      <option value="transit">Em trânsito</option>
+      <option value="porto">No porto</option>
+      <option value="despacho">Em despacho</option>
+      <option value="concluido">Concluído</option>
+      <option value="alerta">Com alerta</option>
+      <option value="demurrage">Demurrage ativa</option>
+    </select>
+    <button class="btn btn-warn" onclick="abrirConfig()"><i class="ti ti-settings"></i> Free time</button>
+    <button class="btn btn-acc" onclick="abrirNovo()"><i class="ti ti-plus"></i> Novo BL</button>
+  </div>
+</div>
+<div class="metrics" id="metrics"></div>
+<div class="tw">
+<table id="tbl">
+<colgroup><col><col><col><col><col><col><col><col><col></colgroup>
+<thead><tr>
+  <th>BL / AWB</th><th>Ref. interna</th><th>Fornecedor</th><th>FOB (USD)</th><th>ETA porto</th><th>Demurrage</th><th>Etapas</th><th>Status</th><th></th>
+</tr></thead>
+<tbody id="tbody"></tbody>
+</table>
+</div>
+<div class="pag" id="paginacao"></div>
+</div>
+
+<!-- Modal Detalhe -->
+<div class="overlay" id="modalDetalhe">
+<div class="modal" onclick="event.stopPropagation()">
+  <div class="mhead">
+    <div><div class="mtit" id="mdTit"></div><div style="font-size:12px;color:var(--text-secondary);margin-top:2px" id="mdSub"></div></div>
+    <button class="mclose" onclick="fechar('modalDetalhe')">×</button>
+  </div>
+  <div id="mdAlerta"></div>
+  <div class="campo-grid" id="mdCampos"></div>
+  <div class="tab-bar">
+    <button class="tab active" id="tab-tl" onclick="switchTab('tl')">Linha do tempo</button>
+    <button class="tab" id="tab-dm" onclick="switchTab('dm')">Demurrage</button>
+    <button class="tab" id="tab-doc" onclick="switchTab('doc')">Documentos</button>
+    <button class="tab" id="tab-email" onclick="switchTab('email')">E-mail alerta</button>
+    <button class="tab" id="tab-obs" onclick="switchTab('obs')">Observações</button>
+  </div>
+  <div id="tabContent"></div>
+  <div style="display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap">
+    <button class="btn btn-warn" onclick="avancarEtapa()"><i class="ti ti-arrow-right"></i> Avançar etapa</button>
+    <button class="btn btn-acc" onclick="enviarEmailAlerta()"><i class="ti ti-mail"></i> Enviar alerta</button>
+  </div>
+</div>
+</div>
+
+<!-- Modal Novo -->
+<div class="overlay" id="modalNovo" onclick="fechar('modalNovo')">
+<div class="modal" onclick="event.stopPropagation()">
+  <div class="mhead"><div class="mtit">Novo processo — cadastro por BL</div><button class="mclose" onclick="fechar('modalNovo')">×</button></div>
+  <div class="row2">
+    <div class="form-group"><label class="form-label">Nº do BL / AWB *</label><input id="nBl" placeholder="ex: COSU1234567890"></div>
+    <div class="form-group"><label class="form-label">Referência interna *</label><input id="nRef" placeholder="ex: IMP-2025-049"></div>
+  </div>
+  <div class="row2">
+    <div class="form-group"><label class="form-label">Fornecedor *</label><input id="nForn" placeholder="Nome do exportador"></div>
+    <div class="form-group"><label class="form-label">CNPJ do exportador</label><input id="nCnpj" placeholder="ex: 12.345.678/0001-99"></div>
+  </div>
+  <div class="row3">
+    <div class="form-group"><label class="form-label">Produto / NCM</label><input id="nProd" placeholder="ex: 8471.30"></div>
+    <div class="form-group"><label class="form-label">Valor FOB (USD)</label><input id="nFob" type="number" placeholder="0.00"></div>
+    <div class="form-group"><label class="form-label">Modal</label>
+      <select id="nModal"><option>Marítimo FCL</option><option>Marítimo LCL</option><option>Aéreo</option><option>Rodoviário</option></select>
+    </div>
+  </div>
+  <div class="row3">
+    <div class="form-group"><label class="form-label">Data de embarque</label><input type="date" id="nEmb"></div>
+    <div class="form-group"><label class="form-label">ETA porto</label><input type="date" id="nEta"></div>
+    <div class="form-group"><label class="form-label">Armador / cia aérea</label><input id="nArmador" placeholder="ex: COSCO, MSC"></div>
+  </div>
+  <div class="row2">
+    <div class="form-group"><label class="form-label">Porto / aeroporto</label><input id="nPorto" placeholder="ex: Santos, Itajaí, GRU"></div>
+    <div class="form-group"><label class="form-label">E-mail p/ alertas</label><input id="nEmail" type="email" placeholder="responsavel@empresa.com"></div>
+  </div>
+  <div class="form-group"><label class="form-label">Observação inicial</label><textarea id="nObs" placeholder="Informações relevantes..."></textarea></div>
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
+    <button class="btn" onclick="fechar('modalNovo')">Cancelar</button>
+    <button class="btn btn-acc" onclick="salvarNovo()">Salvar processo</button>
+  </div>
+</div>
+</div>
+
+<!-- Modal Config -->
+<div class="overlay" id="modalConfig" onclick="fechar('modalConfig')">
+<div class="modal" onclick="event.stopPropagation()" style="max-width:460px">
+  <div class="mhead"><div class="mtit"><i class="ti ti-settings" style="font-size:15px;vertical-align:-1px;margin-right:6px"></i>Configurar free time e tarifas</div><button class="mclose" onclick="fechar('modalConfig')">×</button></div>
+  <div class="config-section">
+    <div class="config-title">Demurrage (container no navio)</div>
+    <div class="row2">
+      <div class="form-group"><label class="form-label">Free time (dias)</label><input id="cfFtDem" type="number" value="10"></div>
+      <div class="form-group"><label class="form-label">Tarifa diária (USD)</label><input id="cfTarDem" type="number" value="75"></div>
+    </div>
+  </div>
+  <div class="config-section">
+    <div class="config-title">Armazenagem (terminal / recinto)</div>
+    <div class="row2">
+      <div class="form-group"><label class="form-label">Free time (dias)</label><input id="cfFtArm" type="number" value="7"></div>
+      <div class="form-group"><label class="form-label">Tarifa diária (USD)</label><input id="cfTarArm" type="number" value="40"></div>
+    </div>
+  </div>
+  <div class="config-section">
+    <div class="config-title">Alertas automáticos</div>
+    <div class="row2">
+      <div class="form-group"><label class="form-label">Avisar X dias antes do fim do free time</label><input id="cfDiasAviso" type="number" value="3"></div>
+      <div class="form-group"><label class="form-label">E-mail padrão da equipe</label><input id="cfEmailPadrao" type="email" placeholder="comex@empresa.com"></div>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:flex-end;gap:8px">
+    <button class="btn" onclick="fechar('modalConfig')">Cancelar</button>
+    <button class="btn btn-acc" onclick="salvarConfig()">Salvar configurações</button>
+  </div>
+</div>
+</div>
+
+<!-- Modal Email -->
+<div class="overlay" id="modalEmail" onclick="fechar('modalEmail')">
+<div class="modal" onclick="event.stopPropagation()" style="max-width:520px">
+  <div class="mhead"><div class="mtit"><i class="ti ti-mail" style="font-size:15px;vertical-align:-1px;margin-right:6px"></i>Enviar alerta por e-mail</div><button class="mclose" onclick="fechar('modalEmail')">×</button></div>
+  <div class="row2">
+    <div class="form-group"><label class="form-label">Para</label><input id="eTo" type="email"></div>
+    <div class="form-group"><label class="form-label">CC</label><input id="eCc" type="email" placeholder="opcional"></div>
+  </div>
+  <div class="form-group"><label class="form-label">Assunto</label><input id="eAssunto"></div>
+  <div class="form-group"><label class="form-label">Mensagem</label><textarea id="eBody" style="min-height:120px"></textarea></div>
+  <div id="emailStatus" style="font-size:12px;color:var(--text-secondary);margin-bottom:8px"></div>
+  <div style="display:flex;justify-content:flex-end;gap:8px">
+    <button class="btn" onclick="fechar('modalEmail')">Cancelar</button>
+    <button class="btn btn-acc" onclick="dispararEmail()"><i class="ti ti-send"></i> Enviar via mailto</button>
+  </div>
+</div>
+</div>
+
+<script>
+const ETAPAS=['Saída China','Em trânsito','Atracação','Presença carga','Registro DI','Desembaraço','Nota fiscal'];
+const ETAPA_ICONS=['ti-ship','ti-world','ti-anchor','ti-package','ti-file-invoice','ti-building-bank','ti-receipt'];
+let config={ftDem:10,tarDem:75,ftArm:7,tarArm:40,diasAviso:3,emailPadrao:''};
+
+let processos=[
+  {bl:'COSU6234897510',ref:'IMP-031',forn:'Shenzhen Tech Co.',cnpj:'12.345.678/0001-99',prod:'Componentes eletrônicos',ncm:'8473.30',fob:48500,modal:'Marítimo FCL',armador:'COSCO',porto:'Santos',emb:'2025-06-10',eta:'2025-07-28',atracacao:'2025-07-28',etapa:5,alerta:'Canal vermelho — aguardando vistoria.',email:'comex@empresa.com',obs:'Processo prioritário.',docs:['Invoice','Packing List','BL original','LI aprovada'],timeline:[{e:0,data:'2025-06-10',obs:'Container stuffing confirmado.'},{e:1,data:'2025-06-15',obs:'Navio COSCO GLORY partiu de Shenzhen.'},{e:2,data:'2025-07-28',obs:'Atracou no terminal BTP Santos.'},{e:3,data:'2025-07-29',obs:'Presença confirmada no Siscomex.'},{e:4,data:'2025-08-01',obs:'DI registrada. Canal vermelho.'}]},
+  {bl:'MSMU4481230067',ref:'IMP-032',forn:'Guangzhou Parts Ltd.',cnpj:'98.765.432/0001-11',prod:'Peças automotivas',ncm:'8708.99',fob:92000,modal:'Marítimo FCL',armador:'MSC',porto:'Itajaí',emb:'2025-06-01',eta:'2025-07-20',atracacao:'2025-07-20',etapa:6,alerta:null,email:'logistica@empresa.com',obs:'Desembaraçado. Emitindo NF.',docs:['Invoice','Packing List','BL original','MAPA aprovado'],timeline:[{e:0,data:'2025-06-01',obs:''},{e:1,data:'2025-06-08',obs:''},{e:2,data:'2025-07-20',obs:'Porto de Itajaí.'},{e:3,data:'2025-07-21',obs:''},{e:4,data:'2025-07-23',obs:'Canal verde.'},{e:5,data:'2025-07-24',obs:'Desembaraço automático.'}]},
+  {bl:'EGLV140525019834',ref:'IMP-033',forn:'Hangzhou Textile',cnpj:'',prod:'Tecidos sintéticos',ncm:'5407.61',fob:22000,modal:'Marítimo LCL',armador:'Evergreen',porto:'Santos',emb:'2025-06-20',eta:'2025-08-20',atracacao:null,etapa:2,alerta:'LI vencendo em 5 dias — renovar urgente!',email:'comex@empresa.com',obs:'Produto sujeito a anuência MDIC.',docs:['Invoice','Packing List','LI — vencendo em 5 dias'],timeline:[{e:0,data:'2025-06-20',obs:''},{e:1,data:'2025-06-28',obs:'Em trânsito.'},{e:2,data:'2025-08-20',obs:'Previsão de atracação.'}]},
+  {bl:'YMLU8880041256',ref:'IMP-034',forn:'Ningbo Machinery',cnpj:'55.123.456/0001-77',prod:'Máquina industrial',ncm:'8477.10',fob:185000,modal:'Marítimo FCL',armador:'Yang Ming',porto:'Santos',emb:'2025-07-15',eta:'2025-09-02',atracacao:null,etapa:1,alerta:null,email:'',obs:'Carga OOG — container open top.',docs:['Invoice','Packing List'],timeline:[{e:0,data:'2025-07-15',obs:'FOB Shanghai confirmado.'},{e:1,data:'2025-07-22',obs:'Em trânsito via Suez.'}]},
+  {bl:'HLCUSHA250744892',ref:'IMP-035',forn:'Shenzhen Tech Co.',cnpj:'12.345.678/0001-99',prod:'Monitores LCD',ncm:'8528.52',fob:61000,modal:'Marítimo FCL',armador:'Hapag-Lloyd',porto:'Santos',emb:'2025-06-25',eta:'2025-08-08',atracacao:'2025-07-30',etapa:3,alerta:null,email:'comex@empresa.com',obs:'Canal amarelo esperado.',docs:['Invoice','Packing List','BL original'],timeline:[{e:0,data:'2025-06-25',obs:''},{e:1,data:'2025-07-02',obs:''},{e:2,data:'2025-07-30',obs:'Terminal DPW Santos.'},{e:3,data:'2025-07-31',obs:'Presença confirmada.'}]},
+  {bl:'ONEY25071A1234567',ref:'IMP-038',forn:'Beijing Chemical',cnpj:'77.888.999/0001-44',prod:'Insumos químicos',ncm:'2921.42',fob:34000,modal:'Marítimo FCL',armador:'ONE',porto:'Santos',emb:'2025-07-01',eta:'2025-08-25',atracacao:'2025-08-01',etapa:4,alerta:'Licença ANVISA pendente — processo bloqueado!',email:'comex@empresa.com',obs:'Produto controlado.',docs:['Invoice','Packing List','BL original','Licença ANVISA — PENDENTE'],timeline:[{e:0,data:'2025-07-01',obs:''},{e:1,data:'2025-07-08',obs:''},{e:2,data:'2025-08-01',obs:'Porto de Santos.'},{e:3,data:'2025-08-02',obs:'Presença confirmada.'},{e:4,data:'2025-08-04',obs:'DI registrada — aguardando ANVISA.'}]},
+];
+
+let filtrados=[...processos],pagAtual=0,POR_PAG=8,proc=null,tabAtiva='tl';
+
+function hoje(){return new Date();}
+function parseDate(d){if(!d)return null;return new Date(d+'T12:00');}
+function diffDias(d1,d2){return Math.round((d2-d1)/(1000*60*60*24));}
+
+function calcDemurrage(p){
+  const atrac=parseDate(p.atracacao);
+  if(!atrac)return null;
+  const agora=hoje();
+  const diasDesdeAtrac=diffDias(atrac,agora);
+  const diasDem=Math.max(0,diasDesdeAtrac-config.ftDem);
+  const diasArm=Math.max(0,diasDesdeAtrac-config.ftArm);
+  const custoDem=diasDem*config.tarDem,custoArm=diasArm*config.tarArm,total=custoDem+custoArm;
+  const fimFtDem=new Date(atrac);fimFtDem.setDate(fimFtDem.getDate()+config.ftDem);
+  const fimFtArm=new Date(atrac);fimFtArm.setDate(fimFtArm.getDate()+config.ftArm);
+  return{diasDesdeAtrac,diasDem,diasArm,custoDem,custoArm,total,fimFtDem,fimFtArm,
+    diasParaFtDem:diffDias(agora,fimFtDem),diasParaFtArm:diffDias(agora,fimFtArm)};
+}
+
+function demurrageBadge(p){
+  if(!p.atracacao)return '<span style="color:var(--text-muted);font-size:12px">—</span>';
+  const d=calcDemurrage(p);if(!d)return '—';
+  if(d.total>0)return`<span class="badge" style="background:#FCEBEB;color:#A32D2D"><i class="ti ti-alert-triangle" style="font-size:10px"></i> USD ${Math.round(d.total).toLocaleString()}</span>`;
+  if(d.diasParaFtArm<=config.diasAviso)return`<span class="badge" style="background:#FAEEDA;color:#633806"><i class="ti ti-clock" style="font-size:10px"></i> ${d.diasParaFtArm}d p/ fim</span>`;
+  return`<span class="badge" style="background:#EAF3DE;color:#3B6D11">Free time</span>`;
+}
+
+function statusBadge(p){
+  if(p.alerta)return'<span class="badge" style="background:#FCEBEB;color:#A32D2D"><i class="ti ti-alert-triangle" style="font-size:10px"></i> Alerta</span>';
+  const labels=['Saída China','Em trânsito','No porto','Presença OK','Registro DI','Desembaraço','NF emitindo'];
+  const cores=[['#E1F5EE','#0F6E56'],['#E6F1FB','#185FA5'],['#E6F1FB','#185FA5'],['#FAEEDA','#854F0B'],['#FAEEDA','#854F0B'],['#FAEEDA','#854F0B'],['#EAF3DE','#3B6D11']];
+  const c=cores[Math.min(p.etapa,6)];
+  return`<span class="badge" style="background:${c[0]};color:${c[1]}">${labels[Math.min(p.etapa,6)]}</span>`;
+}
+
+function etapaBar(p){
+  let h='<div class="etapa-bar">';
+  for(let i=0;i<ETAPAS.length;i++){
+    let cls,txt;
+    if(p.alerta&&i===p.etapa){cls='dalert';txt='!';}
+    else if(i<p.etapa){cls='dd';txt='✓';}
+    else if(i===p.etapa){cls='da';txt=(i+1);}
+    else{cls='dp';txt=(i+1);}
+    h+=`<div class="edot ${cls}" title="${ETAPAS[i]}">${txt}</div>`;
+    if(i<ETAPAS.length-1)h+=`<div style="flex:1;height:2px;background:${i<p.etapa?'#1D9E75':'var(--border)'}"></div>`;
+  }
+  return h+'</div>';
+}
+
+function renderMetrics(){
+  const total=processos.length;
+  const alertas=processos.filter(p=>p.alerta).length;
+  const transito=processos.filter(p=>p.etapa<=1&&!p.alerta).length;
+  const porto=processos.filter(p=>p.etapa>=2&&p.etapa<=3&&!p.alerta).length;
+  const despacho=processos.filter(p=>p.etapa>=4&&p.etapa<=5&&!p.alerta).length;
+  const comDem=processos.filter(p=>{const d=calcDemurrage(p);return d&&d.total>0;}).length;
+  const totalFob=processos.reduce((a,p)=>a+(p.fob||0),0);
+  document.getElementById('metrics').innerHTML=`
+    <div class="metric"><div class="metric-label">Total ativo</div><div class="metric-value">${total}</div><div class="metric-sub">processos</div></div>
+    <div class="metric"><div class="metric-label">Em trânsito</div><div class="metric-value">${transito}</div><div class="metric-sub">viagem China</div></div>
+    <div class="metric"><div class="metric-label">No porto</div><div class="metric-value">${porto}</div><div class="metric-sub">atracação/presença</div></div>
+    <div class="metric"><div class="metric-label">Em despacho</div><div class="metric-value">${despacho}</div><div class="metric-sub">DI / desembaraço</div></div>
+    <div class="metric"><div class="metric-label" style="color:#A32D2D">Alertas</div><div class="metric-value" style="color:#A32D2D">${alertas}</div><div class="metric-sub">requer atenção</div></div>
+    <div class="metric"><div class="metric-label" style="color:#854F0B">Demurrage</div><div class="metric-value" style="color:#854F0B">${comDem}</div><div class="metric-sub">custos ativos</div></div>
+    <div class="metric"><div class="metric-label">FOB total</div><div class="metric-value" style="font-size:15px">$${(totalFob/1000).toFixed(0)}k</div><div class="metric-sub">USD em trânsito</div></div>
+  `;
+}
+
+function renderTabela(){
+  const ini=pagAtual*POR_PAG,pag=filtrados.slice(ini,ini+POR_PAG);
+  const tb=document.getElementById('tbody');
+  if(!pag.length){tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-muted)">Nenhum processo encontrado.</td></tr>';renderPag();return;}
+  tb.innerHTML=pag.map(p=>`
+    <tr onclick="abrirDetalhe('${p.bl}')">
+      <td style="font-weight:500;font-size:12px">${p.bl}</td>
+      <td style="color:var(--text-secondary)">${p.ref}</td>
+      <td>${p.forn}</td>
+      <td style="font-weight:500">${p.fob?'$'+p.fob.toLocaleString():'-'}</td>
+      <td>${p.eta?new Date(p.eta+'T12:00').toLocaleDateString('pt-BR'):'-'}</td>
+      <td>${demurrageBadge(p)}</td>
+      <td>${etapaBar(p)}</td>
+      <td>${statusBadge(p)}</td>
+      <td><button class="btn" onclick="event.stopPropagation();abrirDetalhe('${p.bl}')" style="padding:3px 8px;font-size:11px">Ver</button></td>
+    </tr>`).join('');
+  renderPag();
+}
+
+function renderPag(){
+  const total=Math.ceil(filtrados.length/POR_PAG);
+  if(total<=1){document.getElementById('paginacao').innerHTML='';return;}
+  document.getElementById('paginacao').innerHTML=`<span>${filtrados.length} processos</span><button class="btn" onclick="irPag(${pagAtual-1})" ${pagAtual===0?'disabled':''}>‹</button><span>${pagAtual+1}/${total}</span><button class="btn" onclick="irPag(${pagAtual+1})" ${pagAtual>=total-1?'disabled':''}>›</button>`;
+}
+function irPag(n){pagAtual=n;renderTabela();}
+
+function filtrar(){
+  const q=document.getElementById('busca').value.toLowerCase();
+  const e=document.getElementById('filtroEtapa').value;
+  filtrados=processos.filter(p=>{
+    const mq=!q||p.bl.toLowerCase().includes(q)||p.ref.toLowerCase().includes(q)||p.forn.toLowerCase().includes(q)||p.prod.toLowerCase().includes(q);
+    let me=true;
+    if(e==='alerta')me=!!p.alerta;
+    else if(e==='transit')me=p.etapa<=1&&!p.alerta;
+    else if(e==='porto')me=p.etapa>=2&&p.etapa<=3&&!p.alerta;
+    else if(e==='despacho')me=p.etapa>=4&&p.etapa<=5&&!p.alerta;
+    else if(e==='concluido')me=p.etapa>=6;
+    else if(e==='demurrage'){const d=calcDemurrage(p);me=!!(d&&d.total>0);}
+    return mq&&me;
+  });
+  pagAtual=0;renderTabela();
+}
+
+function abrirDetalhe(bl){
+  proc=processos.find(p=>p.bl===bl);if(!proc)return;
+  const p=proc;
+  document.getElementById('mdTit').textContent='BL: '+p.bl+' — '+p.prod;
+  document.getElementById('mdSub').textContent=p.forn+(p.armador?' • '+p.armador:'')+' • '+p.modal+' • '+p.porto+(p.ncm?' • NCM '+p.ncm:'');
+  document.getElementById('mdAlerta').innerHTML=p.alerta?`<div class="alerta-box"><i class="ti ti-alert-triangle" style="font-size:15px;flex-shrink:0"></i><span>${p.alerta}</span></div>`:'';
+  document.getElementById('mdCampos').innerHTML=`
+    <div class="campo"><div class="campo-label">Referência interna</div><div class="campo-val">${p.ref}</div></div>
+    <div class="campo"><div class="campo-label">Valor FOB</div><div class="campo-val">${p.fob?'USD '+p.fob.toLocaleString():'-'}</div></div>
+    <div class="campo"><div class="campo-label">CNPJ exportador</div><div class="campo-val">${p.cnpj||'—'}</div></div>
+    <div class="campo"><div class="campo-label">Embarque</div><div class="campo-val">${p.emb?new Date(p.emb+'T12:00').toLocaleDateString('pt-BR'):'-'}</div></div>
+    <div class="campo"><div class="campo-label">ETA porto</div><div class="campo-val">${p.eta?new Date(p.eta+'T12:00').toLocaleDateString('pt-BR'):'-'}</div></div>
+    <div class="campo"><div class="campo-label">Atracação</div><div class="campo-val">${p.atracacao?new Date(p.atracacao+'T12:00').toLocaleDateString('pt-BR'):'Aguardando'}</div></div>
+    <div class="campo"><div class="campo-label">Etapa atual</div><div class="campo-val">${ETAPAS[Math.min(p.etapa,6)]}</div></div>
+    <div class="campo"><div class="campo-label">E-mail alerta</div><div class="campo-val" style="font-size:12px">${p.email||'Não configurado'}</div></div>
+  `;
+  switchTab('tl');
+  document.getElementById('modalDetalhe').classList.add('open');
+}
+
+function switchTab(tab){
+  tabAtiva=tab;
+  ['tl','dm','doc','email','obs'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('active',t===tab));
+  const p=proc,tc=document.getElementById('tabContent');
+  if(tab==='tl'){
+    let h='<div>';
+    ETAPAS.forEach((nome,i)=>{
+      const ev=p.timeline.find(t=>t.e===i);
+      const done=i<p.etapa,active=i===p.etapa,alert=p.alerta&&active;
+      const cor=alert?'#E24B4A':done?'#1D9E75':active?'#378ADD':'var(--border-strong)';
+      const tc2=alert||done||active?'#fff':'var(--text-muted)';
+      h+=`<div class="tl-item"><div class="tl-left"><div class="tl-circle" style="background:${cor};color:${tc2};border:${done||active||alert?'none':'0.5px solid var(--border-strong)'}"><i class="ti ${ETAPA_ICONS[i]}" style="font-size:12px"></i></div>${i<ETAPAS.length-1?'<div class="tl-line"></div>':''}</div><div class="tl-content"><div class="tl-label" style="color:${alert?'#A32D2D':done?'var(--text-primary)':active?'#185FA5':'var(--text-muted)'}">${nome}</div>${ev?`<div class="tl-date">${new Date(ev.data+'T12:00').toLocaleDateString('pt-BR')}</div>`:''}${ev&&ev.obs?`<div class="tl-obs">${ev.obs}</div>`:!ev&&!done?`<div class="tl-date" style="font-style:italic">Pendente</div>`:''}</div></div>`;
+    });
+    tc.innerHTML=h+'</div>';
+  }
+  else if(tab==='dm'){
+    const d=calcDemurrage(p);
+    if(!p.atracacao){tc.innerHTML='<div style="color:var(--text-muted);font-size:13px;padding:1rem 0">Container ainda não atracou. O cálculo começa após a data de atracação.</div>';return;}
+    const fmt=v=>'USD '+Math.round(v).toLocaleString();
+    tc.innerHTML=`
+      <div class="demurrage-box">
+        <div style="font-size:13px;font-weight:500;margin-bottom:10px"><i class="ti ti-ship" style="font-size:14px;vertical-align:-1px;margin-right:5px"></i>Demurrage — container no navio</div>
+        <div class="dmrow"><span style="color:var(--text-secondary)">Data de atracação</span><span>${new Date(p.atracacao+'T12:00').toLocaleDateString('pt-BR')}</span></div>
+        <div class="dmrow"><span style="color:var(--text-secondary)">Dias desde atracação</span><span>${d.diasDesdeAtrac} dias</span></div>
+        <div class="dmrow"><span style="color:var(--text-secondary)">Free time</span><span>${config.ftDem} dias (até ${d.fimFtDem.toLocaleDateString('pt-BR')})</span></div>
+        <div class="dmrow"><span style="color:var(--text-secondary)">Dias em demurrage</span><span style="color:${d.diasDem>0?'#A32D2D':'#3B6D11'}">${d.diasDem} dias</span></div>
+        <div class="dmrow" style="background:${d.custoDem>0?'#FCEBEB':'#EAF3DE'};border-radius:var(--radius);padding:8px 10px"><span style="color:${d.custoDem>0?'#791F1F':'#3B6D11'}">Custo demurrage</span><span style="color:${d.custoDem>0?'#791F1F':'#3B6D11'};font-size:15px">${fmt(d.custoDem)}</span></div>
+      </div>
+      <div class="demurrage-box">
+        <div style="font-size:13px;font-weight:500;margin-bottom:10px"><i class="ti ti-building-warehouse" style="font-size:14px;vertical-align:-1px;margin-right:5px"></i>Armazenagem — terminal / recinto</div>
+        <div class="dmrow"><span style="color:var(--text-secondary)">Free time armazenagem</span><span>${config.ftArm} dias (até ${d.fimFtArm.toLocaleDateString('pt-BR')})</span></div>
+        <div class="dmrow"><span style="color:var(--text-secondary)">Dias em armazenagem</span><span style="color:${d.diasArm>0?'#A32D2D':'#3B6D11'}">${d.diasArm} dias</span></div>
+        <div class="dmrow" style="background:${d.custoArm>0?'#FCEBEB':'#EAF3DE'};border-radius:var(--radius);padding:8px 10px"><span style="color:${d.custoArm>0?'#791F1F':'#3B6D11'}">Custo armazenagem</span><span style="color:${d.custoArm>0?'#791F1F':'#3B6D11'};font-size:15px">${fmt(d.custoArm)}</span></div>
+      </div>
+      <div class="dmrow" style="background:${d.total>0?'#FCEBEB':'#EAF3DE'};border-radius:var(--radius);padding:10px 14px"><span style="color:${d.total>0?'#791F1F':'#3B6D11'};font-size:14px">Total acumulado</span><span style="color:${d.total>0?'#791F1F':'#3B6D11'};font-size:18px;font-weight:500">${fmt(d.total)}</span></div>
+    `;
+  }
+  else if(tab==='doc'){
+    let h='<div style="display:flex;flex-direction:column;gap:8px">';
+    p.docs.forEach(d=>{
+      const al=d.includes('PENDENTE')||d.includes('vencendo');
+      h+=`<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius);background:${al?'#FCEBEB':'var(--surface-1)'};border:0.5px solid ${al?'#F7C1C1':'var(--border)'}"><i class="ti ti-file-text" style="font-size:15px;color:${al?'#A32D2D':'var(--text-muted)'}"></i><span style="flex:1;font-size:13px;color:${al?'#791F1F':'var(--text-primary)'}">${d}</span>${al?'<span class="badge" style="background:#F7C1C1;color:#791F1F">Atenção</span>':'<span class="badge" style="background:#E1F5EE;color:#0F6E56">OK</span>'}</div>`;
+    });
+    tc.innerHTML=h+'</div>';
+  }
+  else if(tab==='email'){
+    const d=calcDemurrage(p);
+    const dmInfo=d&&d.total>0?`\n\nDEMURRAGE / ARMAZENAGEM:\n- Dias desde atracação: ${d.diasDesdeAtrac}\n- Custo demurrage: USD ${Math.round(d.custoDem).toLocaleString()}\n- Custo armazenagem: USD ${Math.round(d.custoArm).toLocaleString()}\n- TOTAL: USD ${Math.round(d.total).toLocaleString()}`:'';
+    const alertaInfo=p.alerta?`\n\n⚠ ALERTA: ${p.alerta}`:'';
+    const corpo=`Prezados,\n\nSegue atualização do processo de importação:\n\nBL / AWB: ${p.bl}\nReferência interna: ${p.ref}\nFornecedor: ${p.forn}\nProduto: ${p.prod} (NCM ${p.ncm||'—'})\nValor FOB: USD ${p.fob?p.fob.toLocaleString():'—'}\nModal: ${p.modal} — ${p.armador||'—'}\nPorto: ${p.porto}\nETA: ${p.eta?new Date(p.eta+'T12:00').toLocaleDateString('pt-BR'):'—'}\nAtracação: ${p.atracacao?new Date(p.atracacao+'T12:00').toLocaleDateString('pt-BR'):'Aguardando'}\nEtapa atual: ${ETAPAS[Math.min(p.etapa,6)]}${alertaInfo}${dmInfo}\n\nQualquer dúvida, estou à disposição.\n\nAtt,`;
+    tc.innerHTML=`<div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">Prévia do e-mail de alerta:</div><div class="email-preview">${corpo}</div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-acc" onclick="preencherEmailModal()"><i class="ti ti-mail"></i> Abrir para envio</button><button class="btn" onclick="navigator.clipboard.writeText(window._emailCorpo||'').then(()=>alert('Copiado!'))"><i class="ti ti-copy"></i> Copiar texto</button></div>`;
+    window._emailCorpo=corpo;
+  }
+  else if(tab==='obs'){
+    tc.innerHTML=`<div style="margin-bottom:10px"><div style="font-size:13px;padding:12px;background:var(--surface-1);border-radius:var(--radius);min-height:55px">${p.obs||'<span style="color:var(--text-muted)">Nenhuma observação.</span>'}</div></div><div class="form-group"><label class="form-label">Adicionar observação</label><textarea id="novaObs" placeholder="Digite..."></textarea></div><button class="btn btn-acc" onclick="salvarObs()">Salvar</button>`;
+  }
+}
+
+function avancarEtapa(){
+  if(!proc||proc.etapa>=ETAPAS.length-1)return;
+  proc.etapa++;
+  const hj=new Date().toISOString().slice(0,10);
+  if(!proc.timeline.find(t=>t.e===proc.etapa-1))proc.timeline.push({e:proc.etapa-1,data:hj,obs:'Avançado manualmente.'});
+  abrirDetalhe(proc.bl);renderTabela();renderMetrics();
+}
+function salvarObs(){
+  const txt=document.getElementById('novaObs').value.trim();if(!txt)return;
+  proc.obs=(proc.obs?proc.obs+'\n\n':'')+new Date().toLocaleDateString('pt-BR')+': '+txt;switchTab('obs');
+}
+function fechar(id){document.getElementById(id).classList.remove('open');}
+function abrirNovo(){document.getElementById('modalNovo').classList.add('open');}
+function abrirConfig(){
+  document.getElementById('cfFtDem').value=config.ftDem;document.getElementById('cfTarDem').value=config.tarDem;
+  document.getElementById('cfFtArm').value=config.ftArm;document.getElementById('cfTarArm').value=config.tarArm;
+  document.getElementById('cfDiasAviso').value=config.diasAviso;document.getElementById('cfEmailPadrao').value=config.emailPadrao;
+  document.getElementById('modalConfig').classList.add('open');
+}
+function salvarConfig(){
+  config.ftDem=+document.getElementById('cfFtDem').value||10;config.tarDem=+document.getElementById('cfTarDem').value||75;
+  config.ftArm=+document.getElementById('cfFtArm').value||7;config.tarArm=+document.getElementById('cfTarArm').value||40;
+  config.diasAviso=+document.getElementById('cfDiasAviso').value||3;config.emailPadrao=document.getElementById('cfEmailPadrao').value;
+  fechar('modalConfig');renderTabela();renderMetrics();
+}
+function salvarNovo(){
+  const bl=document.getElementById('nBl').value.trim(),forn=document.getElementById('nForn').value.trim();
+  if(!bl||!forn){alert('Preencha ao menos o BL e o fornecedor.');return;}
+  const ref=document.getElementById('nRef').value.trim();
+  const fob=parseFloat(document.getElementById('nFob').value)||0;
+  processos.unshift({bl,ref:ref||bl,forn,cnpj:document.getElementById('nCnpj').value.trim(),prod:document.getElementById('nProd').value.trim()||'—',ncm:'—',fob,modal:document.getElementById('nModal').value,armador:document.getElementById('nArmador').value.trim(),porto:document.getElementById('nPorto').value.trim(),emb:document.getElementById('nEmb').value,eta:document.getElementById('nEta').value,atracacao:null,etapa:0,alerta:null,email:document.getElementById('nEmail').value.trim()||config.emailPadrao,obs:document.getElementById('nObs').value.trim(),docs:['Invoice','Packing List'],timeline:[{e:0,data:new Date().toISOString().slice(0,10),obs:'Processo cadastrado.'}]});
+  filtrar();renderMetrics();fechar('modalNovo');
+  ['nBl','nRef','nForn','nCnpj','nProd','nFob','nArmador','nPorto','nEmb','nEta','nEmail','nObs'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+}
+function preencherEmailModal(){
+  if(!proc)return;
+  document.getElementById('eTo').value=proc.email||config.emailPadrao||'';
+  document.getElementById('eCc').value=config.emailPadrao&&proc.email!==config.emailPadrao?config.emailPadrao:'';
+  document.getElementById('eAssunto').value=`[Alerta Importação] BL ${proc.bl} — ${proc.ref} — ${ETAPAS[Math.min(proc.etapa,6)]}`;
+  document.getElementById('eBody').value=window._emailCorpo||'';
+  document.getElementById('emailStatus').textContent='';
+  fechar('modalDetalhe');document.getElementById('modalEmail').classList.add('open');
+}
+function enviarEmailAlerta(){switchTab('email');setTimeout(preencherEmailModal,100);}
+function dispararEmail(){
+  const to=document.getElementById('eTo').value;if(!to){alert('Informe o destinatário.');return;}
+  const cc=document.getElementById('eCc').value;
+  const link=`mailto:${to}?${cc?'cc='+encodeURIComponent(cc)+'&':''}subject=${encodeURIComponent(document.getElementById('eAssunto').value)}&body=${encodeURIComponent(document.getElementById('eBody').value)}`;
+  document.getElementById('emailStatus').textContent='Abrindo cliente de e-mail...';
+  window.location.href=link;
+}
+renderMetrics();filtrar();
+</script>
+</body>
+</html>
